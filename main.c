@@ -147,7 +147,7 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 				}
 				return 1;
 			default:
-				fprintf(stderr,"%c is not a command",*input_browse);
+				fprintf(stderr,"%c is not a command\n",*input_browse);
 				return 0;
 		}
 
@@ -214,7 +214,7 @@ signed char connect_to_server(int *main_socket,char *ip_address, unsigned short 
 		return -1;
 	}
 	if((connect(*main_socket,(struct sockaddr *)&address,address_len)) == -1) {
-		fprintf(stderr,"couldn't establish connection");
+		fprintf(stderr,"couldn't establish connection\n");
 		return -1;
 	}
 
