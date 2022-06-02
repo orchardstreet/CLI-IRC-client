@@ -1,3 +1,3 @@
 #! /bin/bash
 
-gcc main.c -o main -O2 -Wall -Werror -Wextra -Wpedantic
+gcc main.c -o main -O2 -Wall -Werror -Wextra -Wpedantic -std=c89

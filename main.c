@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #define BUFFER_LIMIT 4000 /* should always be at least 3 * INPUT_LIMIT */ 
 #define INPUT_LIMIT 515
 
@@ -69,7 +71,7 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 		return 0;
 	}
 
-	if(input_length < 1)
+	if(input_length < 1) 
 		return 0;
 
 	if(*input_browse != '/') {
@@ -243,6 +245,7 @@ int main(int argc, char *argv[])
 	size_t ip_address_length;
 	size_t input_length;
 	unsigned short port;
+	fd_set set, set_backup;
 
 	if(argc < 4)
 		exit_error("Wrong syntax\nSyntax: ./main "
@@ -296,9 +299,8 @@ int main(int argc, char *argv[])
 	buffer[function_response - 1] = 0;
 	printf("%s\n",buffer);
 
-	fd_set set, set_backup;
 	FD_ZERO(&set);
-	FD_SET(fileno(stdin),&set);
+	FD_SET(0,&set);
 	FD_SET(main_socket,&set);
 	set_backup = set;
 
@@ -307,7 +309,7 @@ int main(int argc, char *argv[])
 		if(select(main_socket + 1,&set,NULL,NULL,NULL) == -1)
 			exit_system_error("select failed");
 
-		if(FD_ISSET(fileno(stdin),&set)) {
+		if(FD_ISSET(0,&set)) {
 			if(!fgets(input,INPUT_LIMIT,stdin))
 				exit_system_error("error with fgets");
 			input_length = strlen(input) - 1;
