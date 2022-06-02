@@ -13,4 +13,5 @@ chmod +x compile.sh
 
 ./compile.sh
 
-./main
+./main IP PORT NICK
+eg ./main 127.0.0.1 6667 chris
