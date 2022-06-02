@@ -287,8 +287,11 @@ int main(int argc, char *argv[])
 
 		if(FD_ISSET(main_socket,&set)) {
 			function_response = recv(main_socket,buffer,BUFFER_LIMIT - 1,0);
-			if(function_response == -1) 
+			if(function_response == -1) { 
 				exit_system_error("error with recv");
+			} else if (!function_response) {
+				close(main_socket);
+			}
 			buffer[BUFFER_LIMIT - 1] = 0;
 			printf("o: %d\n",function_response);
 			buffer[function_response - 1] = 0;
