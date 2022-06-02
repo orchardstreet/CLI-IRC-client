@@ -11,7 +11,6 @@
 #include <stdarg.h>
 #define BUFFER_LIMIT 2000
 #define INPUT_LIMIT 515
-#define DEBUG 0
 
 unsigned char fast_strcat(char *dest, unsigned char *amount_array, unsigned char number_of_elements,...)
 {
