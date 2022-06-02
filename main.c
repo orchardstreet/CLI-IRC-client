@@ -1,13 +1,16 @@
 /* CLI IRC Client */
+/* William Lupinacci <will.lupinacci@gmail.com>
+ * All Rights Reserved © 2022 */
 #include <stdlib.h>
 #include <stdio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdarg.h>
 #define BUFFER_LIMIT 2000
 #define INPUT_LIMIT 515
-#include <stdarg.h>
+#define DEBUG 1
 
 unsigned char fast_strcat(char *dest, unsigned char *amount_array, unsigned char number_of_elements,...)
 {
@@ -49,15 +52,17 @@ void exit_system_error(char *the_error)
 	exit(EXIT_FAILURE);	
 }
 
-unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse,size_t input_length,int main_socket,char *channel,unsigned char *channel_length,char *nick) {
+unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse,size_t input_length,int main_socket,char *nick,char *channel,unsigned char *channel_length) {
 	/* return 0 on success, and 1 on quit */
 	
 	unsigned char amount_array[10];
 	unsigned char bytes_copied = 0;
 	char *buffer = buf_browse;
 	char *input = input_browse;
+	char *extra_pointer;
 	ssize_t function_response;
 	size_t message_length;
+	size_t channel_length_count = 0;
 
 	if(input_length > 512) {
 		fprintf(stderr,"Message must be under 512 bytes\n");
@@ -78,6 +83,10 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 		bytes_copied = fast_strcat(buffer,amount_array,3,"PRIVMSG ",channel," :");
 		buf_browse = buf_browse + bytes_copied;
 		printf("%s: %s\n",nick,input);
+		input_length = input_length - (input_browse - input);
+		message_length = (buf_browse - buffer) + input_length + 2;  
+		memcpy(buf_browse,input_browse,input_length);
+		buf_browse = buf_browse + input_length;
 	} else {	
 		input_browse++;
 		switch(*input_browse) {
@@ -93,19 +102,42 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 					return 0;
 				}
 				for(;*input_browse == ' ';input_browse++) { } /* skip spaces */
+				/* make sure join request has a proper channel name format */
 				if(*input_browse != '#') {
 					fprintf(stderr,"Error: Wrong syntax\nSyntax: /j #room\n");
 					return 0; 
 				}
-				if(*(input_browse + 1) < 33 || *(input_browse + 1) > 126) {
-					fprintf(stderr,"Error: invalid room name\n");
-					return 0;
+				extra_pointer = input_browse + 1;
+				for(;*extra_pointer > 33 && *extra_pointer < 126; extra_pointer++) {
+					channel_length_count++;
 				}
-				*channel_length = input_length - (input_browse - input);
-				memcpy(channel,input_browse,*channel_length + 1);
-				printf("channel length: %d",(int)*channel_length);
+				if(!channel_length_count) {
+					fprintf(stderr,"Error: No room specified\n");
+					return 0; 
+				} else if (channel_length_count > 255) {
+					fprintf(stderr,"Error: Channel name too long, "
+							"must be under 255 characters\n");
+					return 0; 
+				}
+				for(;*extra_pointer == ' ';extra_pointer++) {};
+				if(*extra_pointer != '\0') {
+					fprintf(stderr,"Error: Channel name should be a single word"
+						       " with no formatting characters\n");
+					return 0; 
+				}
+				/* copy channel name from input to channel variable */
+				*channel_length = channel_length_count + 1;
+#ifdef DEBUG
+				printf("\nChannel length: %d bytes\n",*channel_length);
+#endif
+				memcpy(channel,input_browse,*channel_length);
+				/* null terminate channel */
+				channel[*channel_length] = 0;
 				memcpy(buf_browse,"JOIN ",5);
 				buf_browse += 5;
+				memcpy(buf_browse,input_browse,*channel_length);
+				buf_browse += *channel_length;
+				message_length = (buf_browse - buffer) + 2;
 				break;
 			case 'q':
 				input_browse++;
@@ -120,19 +152,20 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 		}
 
 	}
-	input_length = input_length - (input_browse - input);
-	message_length = (buf_browse - buffer) + input_length + 2;  
-	memcpy(buf_browse,input_browse,input_length);
-	buf_browse = buf_browse + input_length;
+
+	/* we get the message length in a prior logic piece */
+	/* TODO store buffer and input length in structs, so length don't need  separate variables
+	 * this can make it so this long function can be split up */
 	memcpy(buf_browse,"\r\n",2);
+	buffer[message_length] = 0;
+#ifdef DEBUG
+	printf("\nmessage length: %zu bytes\n",message_length);
+	printf("raw message out: %s",buffer);
+#endif
+	/* write message to socket */
 	function_response = write(main_socket,buffer,message_length);
-	printf("wrote: %ld",function_response);
 	if(function_response == -1)
 		exit_system_error("write failed");
-	buffer[message_length] = 0;
-	printf("s: %ld\n",message_length);
-	printf("b: %s\n",buffer);
-	/*function_response = write(fileno(stdout),buffer,message_length);*/
 	if(function_response == -1)
 		exit_system_error("write failed");
 	return 0;
@@ -281,22 +314,31 @@ int main(int argc, char *argv[])
 			/* get rid of possible EOF stdin */
 			input[input_length] = 0;
 
-		if(parse_input_and_send_to_server(input,buffer,input_length,main_socket,channel,&channel_length,nick))
+		if(parse_input_and_send_to_server(input,buffer,input_length,main_socket,nick,channel,&channel_length))
 			exit(EXIT_SUCCESS);
 		}
 
 		if(FD_ISSET(main_socket,&set)) {
+			/* TODO maybe peek until \r\n and then read after that, and process 
+			 * TODO create function to handle server response*/
 			function_response = recv(main_socket,buffer,BUFFER_LIMIT - 1,0);
 			if(function_response == -1) { 
 				exit_system_error("error with recv");
 			} else if (!function_response) {
 				close(main_socket);
+				printf("Server closed connection\nexiting...\n");
+				exit(EXIT_SUCCESS);
+			} else if (function_response > 514) {
+				/* 512 IRC Message limit plus 2 \r\n
+				 * TODO check if correct number, by comparing with RFC */
+				exit_error("Server response should not be more than 512 characters according to RFC, faulty IRC server");
 			}
 			buffer[BUFFER_LIMIT - 1] = 0;
-			printf("o: %d\n",function_response);
-			buffer[function_response - 1] = 0;
-			printf("yay\n");
-			printf("%s\n",buffer);
+#ifdef DEBUG
+			printf("\nserver response length: %d bytes\n",function_response);
+#endif
+			buffer[function_response] = 0;
+			printf("%s",buffer);
 		}
 		set = set_backup;
 	}
