@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 		if(select(main_socket + 1,&set,NULL,NULL,NULL) == -1)
 			exit_system_error("select failed");
 
-		if(FD_ISSET(0,&set)) {
+		if(FD_ISSET(fileno(stdin),&set)) {
 			if(!fgets(input,INPUT_LIMIT,stdin))
 				exit_system_error("error with fgets");
 			input_length = strlen(input) - 1;
