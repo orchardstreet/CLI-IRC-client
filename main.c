@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
-#define BUFFER_LIMIT 2000
+#define BUFFER_LIMIT 4000 /* should always be at least 3 * INPUT_LIMIT */ 
 #define INPUT_LIMIT 515
 
 unsigned char fast_strcat(char *dest, unsigned char *amount_array, unsigned char number_of_elements,...)
@@ -328,12 +328,15 @@ int main(int argc, char *argv[])
 				close(main_socket);
 				printf("Server closed connection\nexiting...\n");
 				exit(EXIT_SUCCESS);
-			} else if (function_response > 514) {
-				/* 512 IRC Message limit plus 2 \r\n
-				 * TODO check if correct number, by comparing with RFC */
-				exit_error("Server response should not be more than 512 characters according to RFC, faulty IRC server");
-			}
-			buffer[BUFFER_LIMIT - 1] = 0;
+			} else if (function_response > BUFFER_LIMIT-3) {
+				fprintf(stderr,"\n\nServer sent a message too close to the buffer "
+						"limit: %d bytes, truncating message\n"
+						"Consider raising BUFFER_LIMIT in main.c, "
+						"the only penalty would be system memory\n\n",
+						BUFFER_LIMIT);
+				buffer[function_response - 1] = '\n';
+				buffer[function_response - 2] = '\r';
+			}	
 #ifdef DEBUG
 			printf("\nserver response length: %d bytes\n",function_response);
 #endif
