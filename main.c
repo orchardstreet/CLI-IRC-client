@@ -22,10 +22,9 @@
 /* 512 ascii characters, not including \r\n\0 */
 #define MESSAGE_LIMIT 512
 
-/* Fgets fills the end with \n\0 
- * The three extra bytes, includes an extra byte
- * to check for message too large
- * plus two those two characters fgets adds */
+/* The three extra bytes includes an extra byte
+ * to check for if the message too large
+ * plus the \n\0 fgets adds */
 #define INPUT_LIMIT (MESSAGE_LIMIT + 3) 
 
 /* 255 ascii characters, not including '\0' */
