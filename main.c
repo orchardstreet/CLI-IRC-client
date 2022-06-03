@@ -20,7 +20,7 @@
 #include <time.h>
 
 /* 255 ascii characters, not including the ending '\0' */
-#define CHANNEL_LIMIT 255
+#define CHANNEL_LIMIT 254
 #define HOSTNAME_LIMIT 39
 #define SERVER_NAME_LIMIT 254
 #define MAX_SERVERS 30
@@ -170,7 +170,7 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 				for(;*extra_pointer == ' ';extra_pointer++) {}
 				if (channel_length_count + 1 > CHANNEL_LIMIT) {
 					fprintf(stderr,"Error: Channel name/list too long, "
-							"must be under 256 characters\n");
+							"must be under 255 characters\n");
 					return 0; 
 				}
 				if(*extra_pointer != '\0' && *extra_pointer != ',') {
