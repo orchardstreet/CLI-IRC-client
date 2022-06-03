@@ -18,8 +18,21 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
-#define BUFFER_LIMIT 4000 /* should always be at least 3 * INPUT_LIMIT */ 
-#define INPUT_LIMIT 515
+
+/* 512 ascii characters inclusive */
+#define MESSAGE_LIMIT 512
+
+/* Leaving room for an extra byte to check for message too large
+ * plus two null characters fgets adds */
+#define INPUT_LIMIT (MESSAGE_LIMIT + 3) , 
+
+/* 255 ascii characters inclusive */
+#define CHANNEL_LIMIT 255
+
+/* 10 ascii characters inclusive */
+#define NICK_LIMIT 10
+
+#define BUFFER_LIMIT (((MESSAGE_LIMIT * 2) + (CHANNEL_LIMIT * 4) + (NICK_LIMIT * 4)) * 2)   /* should always be at least 3 * INPUT_LIMIT */ 
 
 
 unsigned char fast_strcat(char *dest, unsigned char *amount_array, unsigned char number_of_elements,...)
@@ -75,7 +88,7 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 	size_t message_length;
 	size_t channel_length_count = 0;
 
-	if(input_length > 512) {
+	if(input_length > MESSAGE_LIMIT) {
 		fprintf(stderr,"Message must be under 512 bytes\n");
 		return 0;
 	}
@@ -94,7 +107,6 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 		bytes_copied = fast_strcat(buffer,amount_array,3,"PRIVMSG ",channel," :");
 		buf_browse = buf_browse + bytes_copied;
 		printf("%s: %s\n",nick,input);
-		input_length = input_length - (input_browse - input);
 		message_length = (buf_browse - buffer) + input_length + 2;  
 		memcpy(buf_browse,input_browse,input_length);
 		buf_browse = buf_browse + input_length;
@@ -144,9 +156,9 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 					channel_length_count++;
 				}
 				for(;*extra_pointer == ' ';extra_pointer++) {}
-				if (channel_length_count > 255) {
+				if (channel_length_count > CHANNEL_LENGTH_LIMIT) {
 					fprintf(stderr,"Error: Channel name too long, "
-							"must be under 255 characters\n");
+							"must be under 256 characters\n");
 					return 0; 
 				}
 				if(*extra_pointer != '\0' && *extra_pointer != ',') {
@@ -284,7 +296,7 @@ int main(int argc, char *argv[])
 	nick = argv[3];
 	channel[0] = 0;
 
-	if((nick_length = strlen(nick)) > 9)
+	if((nick_length = strlen(nick)) >= NICK_LIMIT)
 		exit_error("nick must be less than 10 characters");
 
 	if((ip_address_length = strlen(ip_address)) > 39)
