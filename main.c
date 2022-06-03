@@ -19,6 +19,15 @@
 #include <sys/types.h>
 #include <time.h>
 
+/* 255 ascii characters, not including the ending '\0' */
+#define CHANNEL_LIMIT 255
+#define HOSTNAME_LIMIT 39
+#define SERVER_NAME_LIMIT 254
+#define MAX_SERVERS 30
+#define MAX_ROOMS 255
+#define ROOM_TEXT_LIMIT 6000
+#define MALLOCD_MEMORY_ESTIMATE (MAX_SERVERS * (SERVER_NAME_LIMIT + HOSTNAME_LIMIT + 2)) + (MAX_SERVERS * MAX_ROOMS * (ROOM_TEXT_LIMIT + CHANNEL_LIMIT + 2))
+
 /* 512 ascii characters, not including the ending \r\n\0 */
 #define MESSAGE_LIMIT 512
 
@@ -26,9 +35,6 @@
  * to check for if the message is too large
  * plus the \n\0 fgets adds */
 #define INPUT_LIMIT (MESSAGE_LIMIT + 3) 
-
-/* 255 ascii characters, not including the ending '\0' */
-#define CHANNEL_LIMIT 255
 
 /* 10 ascii characters , not including the ending '\0' */
 #define NICK_LIMIT 10
@@ -271,6 +277,21 @@ signed char connect_to_server(int *main_socket,char *ip_address, unsigned short 
 
 int main(int argc, char *argv[])
 {
+	
+	struct Room {
+		char *name;
+		char *text;
+	};
+	struct Server {
+		int socket_fd;
+		char *hostname;
+		char *name;
+		unsigned short port;
+		unsigned char number_of_rooms_used;
+		struct Room *rooms;
+		unsigned char active_room;
+		char *nick;
+	};
 
 	/* define variables */
 	char buffer[BUFFER_LIMIT];
@@ -291,16 +312,26 @@ int main(int argc, char *argv[])
 	fd_set set, set_backup;
 	double prior_time = time(NULL);
 	double now_time;
-
-#ifdef DEBUG
-	printf("Message limit: %d, Nick limit: %d,"
-			" Input limit: %d, Channel limit"
-			": %d, Buffer limit: %d\n",
-			MESSAGE_LIMIT,NICK_LIMIT,
-			INPUT_LIMIT, CHANNEL_LIMIT,
-			BUFFER_LIMIT);
-#endif
-
+	
+	/* Initialise memory */
+	struct Server servers = malloc(sizeof(Server) * MAX_SERVERS);
+	for(i = 0; i < MAX_SERVERS; i++) {
+		server[i].rooms = malloc(sizeof(Room) * MAX_ROOMS);
+		server[i].nick = malloc(NICK_LIMIT + 1);
+		server[i].name = malloc(SERVER_NAME_LIMIT + 1);
+		server[i].hostname = malloc(HOSTNAME_LIMIT + 1);
+		/*fill first byte with 0*/
+		server[i].nick[0] = 0;
+		server[i].name[0] = 0;
+		server[i].hostname[0] = 0;
+		for(p = 0; p < MAX_ROOMS; p++) {
+			server[i].rooms[p].text = malloc(ROOM_TEXT_LIMIT + 1);
+			server[i].rooms[p].name = malloc(CHANNEL_LIMIT + 1);
+			/*fill first byte with 0*/
+			server[i].rooms[p].text[0] = 0;
+			server[i].rooms[p].name[0] = 0; 
+		}
+	}
 
 	if(argc < 4)
 		exit_error("Wrong syntax\nSyntax: ./main "
@@ -314,7 +345,7 @@ int main(int argc, char *argv[])
 	if((nick_length = strlen(nick)) >= NICK_LIMIT)
 		exit_error("nick must be less than 10 characters");
 
-	if((ip_address_length = strlen(ip_address)) > 39)
+	if((ip_address_length = strlen(ip_address)) > HOSTNAME_LIMIT)
 		exit_error("IP address must be less than 40 character");
 
 	if(!(port = get_port_from_port_string(port_string)))
