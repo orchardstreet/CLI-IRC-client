@@ -289,7 +289,9 @@ int main(int argc, char *argv[])
 		unsigned short port;
 		unsigned char number_of_rooms_used;
 		struct Room *rooms;
-		unsigned char active_room;
+		unsigned char active_room; /*the index i of, for example, servers[0].rooms[i].text 
+		aka servers[0].rooms[servers[0].activeroom].text
+		this eliminates needless iteration when switching server and needing to see default room */
 		char *nick;
 	};
 
