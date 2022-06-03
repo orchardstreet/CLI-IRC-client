@@ -18,7 +18,6 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
-#define DEBUG
 
 /* 512 ascii characters inclusive */
 #define MESSAGE_LIMIT 512
