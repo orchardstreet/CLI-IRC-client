@@ -23,7 +23,8 @@
 #define MESSAGE_LIMIT 512
 
 /* Fgets fills the end with \n\0 
-*  Leaving room for an extra byte to check for message too large
+ * The three extra bytes, includes an extra byte
+ * to check for message too large
  * plus two those two characters fgets adds */
 #define INPUT_LIMIT (MESSAGE_LIMIT + 3) 
 
