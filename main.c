@@ -18,13 +18,14 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
+#define DEBUG
 
 /* 512 ascii characters inclusive */
 #define MESSAGE_LIMIT 512
 
 /* Leaving room for an extra byte to check for message too large
  * plus two null characters fgets adds */
-#define INPUT_LIMIT (MESSAGE_LIMIT + 3) , 
+#define INPUT_LIMIT (MESSAGE_LIMIT + 3) 
 
 /* 255 ascii characters inclusive */
 #define CHANNEL_LIMIT 255
@@ -161,7 +162,7 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 					channel_length_count++;
 				}
 				for(;*extra_pointer == ' ';extra_pointer++) {}
-				if (channel_length_count > CHANNEL_LENGTH_LIMIT) {
+				if (channel_length_count > CHANNEL_LIMIT) {
 					fprintf(stderr,"Error: Channel name too long, "
 							"must be under 256 characters\n");
 					return 0; 
@@ -290,6 +291,15 @@ int main(int argc, char *argv[])
 	fd_set set, set_backup;
 	double prior_time = time(NULL);
 	double now_time;
+
+#ifdef DEBUG
+	printf("Message limit: %d, Nick limit: %d,"
+			" Input limit: %d, Channel limit"
+			": %d, Buffer limit: %d\n",
+			MESSAGE_LIMIT,NICK_LIMIT,
+			INPUT_LIMIT, CHANNEL_LIMIT,
+			BUFFER_LIMIT);
+#endif
 
 
 	if(argc < 4)
