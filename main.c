@@ -20,7 +20,6 @@
 #include <time.h>
 #define BUFFER_LIMIT 4000 /* should always be at least 3 * INPUT_LIMIT */ 
 #define INPUT_LIMIT 515
-#define DEBUG
 
 
 unsigned char fast_strcat(char *dest, unsigned char *amount_array, unsigned char number_of_elements,...)
