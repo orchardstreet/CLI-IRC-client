@@ -162,8 +162,8 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 					channel_length_count++;
 				}
 				for(;*extra_pointer == ' ';extra_pointer++) {}
-				if (channel_length_count > CHANNEL_LIMIT) {
-					fprintf(stderr,"Error: Channel name too long, "
+				if (channel_length_count + 1 > CHANNEL_LIMIT) {
+					fprintf(stderr,"Error: Channel name/list too long, "
 							"must be under 256 characters\n");
 					return 0; 
 				}
