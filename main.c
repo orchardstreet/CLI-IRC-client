@@ -32,6 +32,11 @@
 /* 10 ascii characters inclusive */
 #define NICK_LIMIT 10
 
+/* Memory section used for containing the full bytes to send to server, plus for receiving
+ * bytes from the server.  Non-user defined bytes to send to the server are never longer 
+ * than 50 bytes, plus '\r\n'.  When adding user defined fields to send to the server, check them 
+ * individually for overflow in the code and include them in this define to adjust the BUFFER_LIMIT 
+ * appropriately.  As it is now this should never have buffer overflows. */
 #define BUFFER_LIMIT (((MESSAGE_LIMIT * 2) + (CHANNEL_LIMIT * 4) + (NICK_LIMIT * 4)) * 2)   /* should always be at least 3 * INPUT_LIMIT */ 
 
 
