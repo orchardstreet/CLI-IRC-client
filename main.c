@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
 	char input[INPUT_LIMIT];
 	int main_socket;
 	int function_response;
-	char channel[256];
+	char channel[CHANNEL_LIMIT + 1];
 	unsigned char channel_length;
 	char *ip_address;
 	char *port_string;
