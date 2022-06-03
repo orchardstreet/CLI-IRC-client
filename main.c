@@ -19,17 +19,18 @@
 #include <sys/types.h>
 #include <time.h>
 
-/* 512 ascii characters inclusive */
+/* 512 ascii characters, not including \r\n\0 */
 #define MESSAGE_LIMIT 512
 
-/* Leaving room for an extra byte to check for message too large
- * plus two null characters fgets adds */
+/* Fgets fills the end with \n\0 
+*  Leaving room for an extra byte to check for message too large
+ * plus two those two characters fgets adds */
 #define INPUT_LIMIT (MESSAGE_LIMIT + 3) 
 
-/* 255 ascii characters inclusive */
+/* 255 ascii characters, not including '\0' */
 #define CHANNEL_LIMIT 255
 
-/* 10 ascii characters inclusive */
+/* 10 ascii characters , not including '\0' */
 #define NICK_LIMIT 10
 
 /* Memory section used for containing the full bytes to send to server, plus for receiving
