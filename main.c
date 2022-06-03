@@ -1,3 +1,4 @@
+/*TODO Free mallocs at end with similar loop*/
 /* relevant rfcs: 
  * rfc1459 Internet Relay Chat Protocol, published in 1993  https://datatracker.ietf.org/doc/html/rfc1459
  * rfc2812 Internet Relay Chat: Client Protocol, published in 2000 https://datatracker.ietf.org/doc/html/rfc2812
