@@ -1,4 +1,10 @@
+/* relevant rfcs: 
+ * rfc1459 Internet Relay Chat Protocol, published in 1993  https://datatracker.ietf.org/doc/html/rfc1459
+ * rfc2812 Internet Relay Chat: Client Protocol, published in 2000 https://datatracker.ietf.org/doc/html/rfc2812
+ * proposal ref 2022 https://modern.ircdocs.horse */
 /* TODO respond with PONG */
+/* TODO create recv buffer of 4000 */
+/* TODO create output buffer of 600 */
 /* CLI IRC Client */
 /* William Lupinacci <will.lupinacci@gmail.com>
  * All Rights Reserved © 2022 */
@@ -11,8 +17,11 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <time.h>
 #define BUFFER_LIMIT 4000 /* should always be at least 3 * INPUT_LIMIT */ 
 #define INPUT_LIMIT 515
+#define DEBUG
+
 
 unsigned char fast_strcat(char *dest, unsigned char *amount_array, unsigned char number_of_elements,...)
 {
@@ -62,6 +71,7 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 	char *buffer = buf_browse;
 	char *input = input_browse;
 	char *extra_pointer;
+	char *sort_pointer;
 	ssize_t function_response;
 	size_t message_length;
 	size_t channel_length_count = 0;
@@ -105,27 +115,44 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 				}
 				for(;*input_browse == ' ';input_browse++) { } /* skip spaces */
 				/* make sure join request has a proper channel name format */
+				for(;*input_browse == ',';input_browse++) { } /* skip commas weechat does this*/
 				if(*input_browse != '#') {
 					fprintf(stderr,"Error: Wrong syntax\nSyntax: /j #room\n");
 					return 0; 
 				}
 				extra_pointer = input_browse + 1;
-				for(;*extra_pointer > 33 && *extra_pointer < 126; extra_pointer++) {
+				/* will only end this for loop
+				 * on a null character or a space */
+				for(;*extra_pointer && *extra_pointer != ' '; extra_pointer++) {
+					if(*extra_pointer < 33 || *extra_pointer > 126)  {
+						fprintf(stderr,"Error: No control characters in channel names\n");
+						return 0; 
+
+					}
+					while(*extra_pointer == ',' && *(extra_pointer + 1) == ',') {
+						sort_pointer = extra_pointer;
+						do {
+							sort_pointer++;
+							*(sort_pointer - 1) = *sort_pointer;
+						} while(*sort_pointer);
+					}
+					if(*extra_pointer == ',' && (*(extra_pointer + 1) == ' ' || *(extra_pointer + 1) == '\0')) {
+						extra_pointer++;
+						break;
+					} else if (*extra_pointer == ',' && *(extra_pointer + 1) != '#') {
+						break;
+					}
 					channel_length_count++;
 				}
-				if(!channel_length_count) {
-					fprintf(stderr,"Error: No room specified\n");
-					return 0; 
-				} else if (channel_length_count > 255) {
+				for(;*extra_pointer == ' ';extra_pointer++) {}
+				if (channel_length_count > 255) {
 					fprintf(stderr,"Error: Channel name too long, "
 							"must be under 255 characters\n");
 					return 0; 
 				}
-				for(;*extra_pointer == ' ';extra_pointer++) {};
-				if(*extra_pointer != '\0') {
-					fprintf(stderr,"Error: Channel name should be a single word"
-						       " with no formatting characters\n");
-					return 0; 
+				/* eat spaces */
+				if(*extra_pointer != '\0' && *extra_pointer != ',') {
+					fprintf(stderr,"Error: Channel name or list shouldn't have spaces\n"); return 0; 
 				}
 				/* copy channel name from input to channel variable */
 				*channel_length = channel_length_count + 1;
@@ -149,7 +176,7 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 				}
 				return 1;
 			default:
-				fprintf(stderr,"%c is not a command\n",*input_browse);
+				fprintf(stderr,"Not a command\n");
 				return 0;
 		}
 
@@ -161,7 +188,7 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 	memcpy(buf_browse,"\r\n",2);
 	buffer[message_length] = 0;
 #ifdef DEBUG
-	printf("\nmessage length: %zu bytes\n",message_length);
+	printf("\nmessage length: %lu bytes\n",(unsigned long)message_length);
 	printf("raw message out: %s",buffer);
 #endif
 	/* write message to socket */
@@ -246,6 +273,9 @@ int main(int argc, char *argv[])
 	size_t input_length;
 	unsigned short port;
 	fd_set set, set_backup;
+	double prior_time = time(NULL);
+	double now_time;
+
 
 	if(argc < 4)
 		exit_error("Wrong syntax\nSyntax: ./main "
@@ -315,9 +345,15 @@ int main(int argc, char *argv[])
 			input_length = strlen(input) - 1;
 			/* get rid of possible EOF stdin */
 			input[input_length] = 0;
+			
+			now_time = time(NULL);
+			if(!difftime(now_time,prior_time))
+				printf("Slow down buddy\n");
+			prior_time = now_time;
 
-		if(parse_input_and_send_to_server(input,buffer,input_length,main_socket,nick,channel,&channel_length))
-			exit(EXIT_SUCCESS);
+
+			if(parse_input_and_send_to_server(input,buffer,input_length,main_socket,nick,channel,&channel_length))
+				exit(EXIT_SUCCESS);
 		}
 
 		if(FD_ISSET(main_socket,&set)) {
