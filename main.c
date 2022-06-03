@@ -150,7 +150,6 @@ unsigned char parse_input_and_send_to_server(char *input_browse,char *buf_browse
 							"must be under 255 characters\n");
 					return 0; 
 				}
-				/* eat spaces */
 				if(*extra_pointer != '\0' && *extra_pointer != ',') {
 					fprintf(stderr,"Error: Channel name or list shouldn't have spaces\n"); return 0; 
 				}
