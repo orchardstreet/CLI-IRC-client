@@ -317,9 +317,9 @@ int main(int argc, char *argv[])
 	double now_time;
 	
 	/* Initialise memory */
-	struct Server servers = malloc(sizeof(Server) * MAX_SERVERS);
+	struct Server *servers = malloc(sizeof(struct Server) * MAX_SERVERS);
 	for(i = 0; i < MAX_SERVERS; i++) {
-		server[i].rooms = malloc(sizeof(Room) * MAX_ROOMS);
+		server[i].rooms = malloc(sizeof(struct Room) * MAX_ROOMS);
 		server[i].nick = malloc(NICK_LIMIT + 1);
 		server[i].name = malloc(SERVER_NAME_LIMIT + 1);
 		server[i].hostname = malloc(HOSTNAME_LIMIT + 1);
