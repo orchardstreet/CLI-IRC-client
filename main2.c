@@ -20,9 +20,14 @@ int main(int argc, char *argv[])
 {
 
 	/* define variables */
-	struct Server *servers;
+	struct Server servers[MAX_SERVERS];
+	struct Room rooms[MAX_ROOMS];
+	unsigned char number_of_servers = 0;
 
-	number_of_servers = process_server_list_file(servers);
+	(void)argc;
+	(void)argv;
+
+	number_of_servers = process_server_list_file(&servers);
 
 #if AUTOSTART == true
 	if (!number_of_servers) {

@@ -8,9 +8,7 @@
 signed char validate_number(char **number_string) {
 	/* function returns -1 on failure, number on success */
 	/* should check that number is 1 - 255 */
-	unsigned char number = 1;
-
-	return number; /* success */
+	unsigned char number = 1; return number; /* success */
 }
 unsigned char validate_hostname(char **hostname) {
 	/* function returns -1 on failure, 0 on success */
@@ -31,7 +29,7 @@ unsigned char validate_servername(char **servername) {
 	return 0; /* success */
 }
 
-unsigned char process_server_list_file(struct Server *,unsigned char *number_of_servers)
+unsigned char process_server_list_file(struct Server *servers)
 {
 	/* returns number of properly formatted servers found and processed into server struct 
 	 * and returns 0 on no servers found */
@@ -57,14 +55,13 @@ unsigned char process_server_list_file(struct Server *,unsigned char *number_of_
 		return 0;
 	}
 	
-	number_of_servers = 1; /* change this */
 	byte = fgetc(servers_list);
 	if (byte == '\n' || byte == EOF) {
 		fprintf(stderr,"nothing in servers list file\n");
 		return 0;  
 	}
 	/*TODO make sure program never stores space as first byte of hostname */
-	if (byte < 33 || byte > 126) {
+	if (byte < '0' || byte > '9') {
 		fprintf(stderr,"corrupted first byte of server list file\n"
 				"no servers read from file\n");
 		return 0;  
@@ -101,7 +98,7 @@ unsigned char process_server_list_file(struct Server *,unsigned char *number_of_
 
 		if((number = validate_number(&browse_line)) == -1) {
 			fprintf(stderr,"line %d in server file should start with a server number < MAX_SERVERS as defined in config.h, skipping processing this server\n",line_counter);
-			continue;
+			return 0;
 		}
 		line_holder++;
 		if(line_holder != ' ') {
